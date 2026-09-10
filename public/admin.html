@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestione Menu — Pannello locale</title>
+<style>
+  :root{
+    --cream: #faf8f4;
+    --gold: #a9822f;
+    --gold-deep: #8a6a22;
+    --ink: #1c1a17;
+    --line: #e4ddcc;
+    --red: #b23a3a;
+    --green: #3a7d44;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    padding: 16px 16px 100px;
+  }
+  h1{ font-size: 20px; margin: 0 0 4px; }
+  .sub{ font-size: 13px; opacity: 0.6; margin-bottom: 20px; }
+
+  input, textarea{
+    font-family: inherit;
+    font-size: 14px;
+    padding: 7px 9px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: white;
+    color: var(--ink);
+    width: 100%;
+  }
+  label{
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.55;
+    margin-bottom: 3px;
+    margin-top: 8px;
+  }
+
+  button{
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .btn-gold{ background: var(--gold); color: white; }
+  .btn-gold:hover{ background: var(--gold-deep); }
+  .btn-outline{ background: white; color: var(--ink); border: 1px solid var(--line); }
+  .btn-red{ background: var(--red); color: white; }
+  .btn-small{ padding: 5px 10px; font-size: 12px; }
+
+  .category-card{
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 18px;
+  }
+  .category-header{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .category-actions{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+  }
+
+  .dish-row{
+    border-top: 1px solid var(--line);
+    padding-top: 12px;
+    margin-top: 12px;
+  }
+  .dish-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .dish-grid .full{ grid-column: 1 / -1; }
+  .dish-row-footer{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .price-field{ max-width: 120px; }
+
+  .top-bar{
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: var(--ink);
+    color: white;
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10;
+    font-size: 13px;
+  }
+  .top-bar button{ margin: 0; }
+  body{ padding-top: 52px; }
+
+  .save-bar{
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-top: 1px solid var(--line);
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10;
+  }
+  .save-status{ font-size: 12px; opacity: 0.6; }
+
+  .add-category-btn{ display: block; width: 100%; margin-top: 6px; }
+
+  .login-screen{
+    max-width: 320px;
+    margin: 80px auto;
+    text-align: center;
+  }
+  .login-screen h2{ margin-bottom: 4px; }
+
+  /* tabs */
+  .tabs{
+    display: flex;
+    gap: 4px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .tab-btn{
+    background: none;
+    border: none;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    opacity: 0.55;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+  }
+  .tab-btn.active{
+    opacity: 1;
+    color: var(--gold-deep);
+    border-bottom: 2px solid var(--gold);
+  }
+
+  /* tavoli */
+  .table-row{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+  }
+  .table-row .table-name{ font-weight: 600; font-size: 14px; }
+  .table-row .table-token{ font-size: 11px; opacity: 0.5; font-family: monospace; }
+  .table-row .table-actions{ display: flex; gap: 6px; align-items: center; }
+
+  .qr-modal-backdrop{
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+  }
+  .qr-modal-backdrop.open{ display: flex; }
+  .qr-modal{
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    max-width: 90vw;
+  }
+  .qr-modal img{ width: 260px; height: 260px; display: block; margin: 0 auto 14px; }
+</style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <span id="topBarTitle">Pannello gestione locale</span>
+    <span id="localeLabel"></span>
+  </div>
+
+  <div id="loginScreen" class="login-screen">
+    <h2>Accesso gestore</h2>
+    <p class="sub">Inserisci la password del locale per modificare menu e tavoli.</p>
+    <label>Password</label>
+    <input type="password" id="passwordInput" placeholder="••••••••">
+    <button class="btn-gold" style="margin-top:14px; width:100%;" id="loginBtn">Entra</button>
+    <p class="sub" id="loginError" style="color:#b23a3a;"></p>
+  </div>
+
+  <div id="editorScreen" style="display:none;">
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="menuTab">Menu</button>
+      <button class="tab-btn" data-tab="tablesTab">Tavoli e QR</button>
+    </div>
+
+    <div id="menuTab" class="tab-panel">
+      <h1>Modifica il tuo menu</h1>
+      <div class="sub">Le modifiche diventano visibili sul sito solo dopo aver premuto "Salva tutto" in basso.</div>
+
+      <div id="categoriesContainer"></div>
+
+      <button class="btn-outline add-category-btn" id="addCategoryBtn">+ Aggiungi categoria</button>
+    </div>
+
+    <div id="tablesTab" class="tab-panel" style="display:none;">
+      <h1>Tavoli e QR code</h1>
+      <div class="sub">Qui puoi aggiungere un nuovo tavolo in qualsiasi momento: ottieni subito il suo QR, senza bisogno del computer o di comandi tecnici.</div>
+
+      <div class="category-card">
+        <label>Indirizzo del sito (una volta sola, quando è online)</label>
+        <input type="text" id="siteUrlInput" placeholder="https://tuosito.netlify.app">
+        <button class="btn-outline btn-small" id="saveSiteUrlBtn" style="margin-top:8px;">Salva indirizzo</button>
+        <span class="save-status" id="siteUrlStatus" style="margin-left:8px;"></span>
+      </div>
+
+      <div class="category-card">
+        <label>Nome nuovo tavolo</label>
+        <input type="text" id="newTableInput" placeholder="Es. Tavolo 16">
+        <button class="btn-gold btn-small" id="addTableBtn" style="margin-top:8px;">+ Aggiungi tavolo</button>
+      </div>
+
+      <div id="tablesList"></div>
+    </div>
+
+  </div>
+
+  <div class="save-bar" id="saveBar" style="display:none;">
+    <span class="save-status" id="saveStatus"></span>
+    <button class="btn-gold" id="saveAllBtn">Salva tutto</button>
+  </div>
+
+  <div class="qr-modal-backdrop" id="qrModalBackdrop">
+    <div class="qr-modal">
+      <h3 id="qrModalTitle"></h3>
+      <img id="qrModalImg" alt="QR code tavolo">
+      <div style="display:flex; gap:8px; justify-content:center;">
+        <a id="qrDownloadBtn" class="btn-gold btn-small" download="qr-tavolo.png">Scarica</a>
+        <button class="btn-outline btn-small" id="qrCloseBtn">Chiudi</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Modifica con l'indirizzo vero del backend quando è online
+    var API_BASE = "http://localhost:3000";
+
+    var adminPassword = null;
+    var menuData = null;
+
+    var loginScreen = document.getElementById('loginScreen');
+    var editorScreen = document.getElementById('editorScreen');
+    var saveBar = document.getElementById('saveBar');
+    var loginError = document.getElementById('loginError');
+
+    document.getElementById('loginBtn').addEventListener('click', async function(){
+      var pwd = document.getElementById('passwordInput').value;
+      loginError.textContent = '';
+      try{
+        var res = await fetch(API_BASE + '/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-password': pwd }
+        });
+        if (!res.ok){
+          loginError.textContent = 'Password errata.';
+          return;
+        }
+        adminPassword = pwd;
+        await loadMenu();
+        await loadSettings();
+        await loadTables();
+        loginScreen.style.display = 'none';
+        editorScreen.style.display = 'block';
+        saveBar.style.display = 'flex';
+      } catch(err){
+        loginError.textContent = 'Impossibile contattare il server (' + API_BASE + ').';
+      }
+    });
+
+    /* ---- tabs ---- */
+    document.querySelectorAll('.tab-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('active', b === btn); });
+        document.querySelectorAll('.tab-panel').forEach(function(p){
+          p.style.display = (p.id === btn.getAttribute('data-tab')) ? 'block' : 'none';
+        });
+        saveBar.style.display = (btn.getAttribute('data-tab') === 'menuTab') ? 'flex' : 'none';
+      });
+    });
+
+    async function loadMenu(){
+      var res = await fetch(API_BASE + '/api/menu');
+      menuData = await res.json();
+      renderCategories();
+    }
+
+    function renderCategories(){
+      var container = document.getElementById('categoriesContainer');
+      container.innerHTML = '';
+      menuData.categories.forEach(function(cat, catIndex){
+        container.appendChild(buildCategoryCard(cat, catIndex));
+      });
+    }
+
+    function buildCategoryCard(cat, catIndex){
+      var card = document.createElement('div');
+      card.className = 'category-card';
+
+      card.innerHTML = `
+        <label>Nome categoria (Italiano)</label>
+        <input type="text" value="${escapeAttr(cat.name_it)}" data-field="name_it">
+        <div class="category-header">
+          <div>
+            <label>Nome categoria (Inglese)</label>
+            <input type="text" value="${escapeAttr(cat.name_en)}" data-field="name_en">
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <input type="text" value="${escapeAttr(cat.id)}" data-field="id" placeholder="id-tecnico">
+          </div>
+        </div>
+        <label>Descrizione breve (Italiano)</label>
+        <input type="text" value="${escapeAttr(cat.desc_it)}" data-field="desc_it">
+        <label>Descrizione breve (Inglese)</label>
+        <input type="text" value="${escapeAttr(cat.desc_en)}" data-field="desc_en">
+
+        <div class="dishes-container"></div>
+
+        <div class="category-actions">
+          <button class="btn-outline btn-small add-dish-btn">+ Aggiungi voce</button>
+          <button class="btn-red btn-small delete-category-btn">Elimina categoria</button>
+        </div>
+      `;
+
+      // campi categoria -> aggiornano menuData dal vivo
+      card.querySelectorAll('[data-field]').forEach(function(input){
+        input.addEventListener('input', function(){
+          menuData.categories[catIndex][input.getAttribute('data-field')] = input.value;
+        });
+      });
+
+      var dishesContainer = card.querySelector('.dishes-container');
+      cat.dishes.forEach(function(dish, dishIndex){
+        dishesContainer.appendChild(buildDishRow(cat, catIndex, dish, dishIndex));
+      });
+
+      card.querySelector('.add-dish-btn').addEventListener('click', function(){
+        var newDish = { id: 'nuova-voce-' + Date.now(), name_it: 'Nuova voce', name_en: 'New item', info_it: '', info_en: '', price: 0 };
+        menuData.categories[catIndex].dishes.push(newDish);
+        renderCategories();
+      });
+
+      card.querySelector('.delete-category-btn').addEventListener('click', function(){
+        if (!confirm('Eliminare la categoria "' + cat.name_it + '" e tutte le sue voci?')) return;
+        menuData.categories.splice(catIndex, 1);
+        renderCategories();
+      });
+
+      return card;
+    }
+
+    function buildDishRow(cat, catIndex, dish, dishIndex){
+      var row = document.createElement('div');
+      row.className = 'dish-row';
+      row.innerHTML = `
+        <div class="dish-grid">
+          <div>
+            <label>Nome (Italiano)</label>
+            <input type="text" value="${escapeAttr(dish.name_it)}" data-field="name_it">
+          </div>
+          <div>
+            <label>Nome (Inglese)</label>
+            <input type="text" value="${escapeAttr(dish.name_en)}" data-field="name_en">
+          </div>
+          <div class="full">
+            <label>Descrizione (Italiano)</label>
+            <input type="text" value="${escapeAttr(dish.info_it)}" data-field="info_it">
+          </div>
+          <div class="full">
+            <label>Descrizione (Inglese)</label>
+            <input type="text" value="${escapeAttr(dish.info_en)}" data-field="info_en">
+          </div>
+        </div>
+        <div class="dish-row-footer">
+          <div class="price-field">
+            <label>Prezzo (€)</label>
+            <input type="number" step="0.10" min="0" value="${dish.price}" data-field="price">
+          </div>
+          <button class="btn-red btn-small delete-dish-btn">Elimina voce</button>
+        </div>
+      `;
+
+      row.querySelectorAll('[data-field]').forEach(function(input){
+        input.addEventListener('input', function(){
+          var field = input.getAttribute('data-field');
+          var value = field === 'price' ? parseFloat(input.value || '0') : input.value;
+          menuData.categories[catIndex].dishes[dishIndex][field] = value;
+        });
+      });
+
+      row.querySelector('.delete-dish-btn').addEventListener('click', function(){
+        menuData.categories[catIndex].dishes.splice(dishIndex, 1);
+        renderCategories();
+      });
+
+      return row;
+    }
+
+    document.getElementById('addCategoryBtn').addEventListener('click', function(){
+      menuData.categories.push({
+        id: 'nuova-categoria-' + Date.now(),
+        name_it: 'Nuova categoria', name_en: 'New category',
+        desc_it: '', desc_en: '',
+        dishes: [],
+      });
+      renderCategories();
+    });
+
+    document.getElementById('saveAllBtn').addEventListener('click', async function(){
+      var statusEl = document.getElementById('saveStatus');
+      statusEl.textContent = 'Salvataggio…';
+      try{
+        var res = await fetch(API_BASE + '/api/admin/menu', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+          body: JSON.stringify(menuData)
+        });
+        if (!res.ok) throw new Error('save failed');
+        statusEl.textContent = 'Salvato ✓ (' + new Date().toLocaleTimeString('it-IT') + ')';
+      } catch(err){
+        statusEl.textContent = 'Errore nel salvataggio, riprova.';
+      }
+    });
+
+    function escapeAttr(str){
+      return String(str || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    }
+
+    /* ---- sezione Tavoli e QR ---- */
+    var currentSettings = { siteUrl: '' };
+    var currentTables = {};
+
+    async function loadSettings(){
+      var res = await fetch(API_BASE + '/api/admin/settings', {
+        headers: { 'x-admin-password': adminPassword }
+      });
+      currentSettings = await res.json();
+      document.getElementById('siteUrlInput').value = currentSettings.siteUrl || '';
+    }
+
+    document.getElementById('saveSiteUrlBtn').addEventListener('click', async function(){
+      var statusEl = document.getElementById('siteUrlStatus');
+      var url = document.getElementById('siteUrlInput').value.trim();
+      statusEl.textContent = 'Salvataggio…';
+      try{
+        var res = await fetch(API_BASE + '/api/admin/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+          body: JSON.stringify({ siteUrl: url })
+        });
+        if (!res.ok) throw new Error('save failed');
+        currentSettings.siteUrl = url;
+        statusEl.textContent = 'Salvato ✓';
+      } catch(err){
+        statusEl.textContent = 'Errore, riprova.';
+      }
+    });
+
+    async function loadTables(){
+      var res = await fetch(API_BASE + '/api/admin/tables', {
+        headers: { 'x-admin-password': adminPassword }
+      });
+      currentTables = await res.json();
+      renderTables();
+    }
+
+    function renderTables(){
+      var list = document.getElementById('tablesList');
+      list.innerHTML = '';
+      var tokens = Object.keys(currentTables);
+      if (tokens.length === 0){
+        list.innerHTML = '<p class="sub">Nessun tavolo ancora registrato.</p>';
+        return;
+      }
+      tokens.forEach(function(token){
+        var info = currentTables[token];
+        var row = document.createElement('div');
+        row.className = 'table-row';
+        row.innerHTML =
+          '<div>' +
+            '<div class="table-name">' + escapeAttr(info.table) + '</div>' +
+            '<div class="table-token">' + escapeAttr(token) + '</div>' +
+          '</div>' +
+          '<div class="table-actions">' +
+            '<button class="btn-outline btn-small qr-btn">Mostra QR</button>' +
+            '<button class="btn-red btn-small delete-table-btn">Elimina</button>' +
+          '</div>';
+
+        row.querySelector('.qr-btn').addEventListener('click', function(){
+          showQr(token, info.table);
+        });
+        row.querySelector('.delete-table-btn').addEventListener('click', async function(){
+          if (!confirm('Eliminare "' + info.table + '"? Il QR stampato smetterà di funzionare.')) return;
+          await fetch(API_BASE + '/api/admin/tables/' + token, {
+            method: 'DELETE',
+            headers: { 'x-admin-password': adminPassword }
+          });
+          await loadTables();
+        });
+
+        list.appendChild(row);
+      });
+    }
+
+    document.getElementById('addTableBtn').addEventListener('click', async function(){
+      var input = document.getElementById('newTableInput');
+      var name = input.value.trim();
+      if (!name) return;
+      var res = await fetch(API_BASE + '/api/admin/tables', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+        body: JSON.stringify({ table: name })
+      });
+      var data = await res.json();
+      input.value = '';
+      await loadTables();
+      if (data.token) showQr(data.token, data.table);
+    });
+
+    async function showQr(token, tableName){
+      if (!currentSettings.siteUrl){
+        alert('Imposta prima l\'indirizzo del sito qui sopra, poi riprova a mostrare il QR.');
+        return;
+      }
+      var backdrop = document.getElementById('qrModalBackdrop');
+      var img = document.getElementById('qrModalImg');
+      var title = document.getElementById('qrModalTitle');
+      var downloadBtn = document.getElementById('qrDownloadBtn');
+
+      title.textContent = tableName;
+      backdrop.classList.add('open');
+      img.src = '';
+
+      try{
+        var res = await fetch(API_BASE + '/api/admin/tables/' + token + '/qr.png', {
+          headers: { 'x-admin-password': adminPassword }
+        });
+        var blob = await res.blob();
+        var objectUrl = URL.createObjectURL(blob);
+        img.src = objectUrl;
+        downloadBtn.href = objectUrl;
+        downloadBtn.download = 'qr-' + tableName.toLowerCase().replace(/\s+/g, '-') + '.png';
+      } catch(err){
+        title.textContent = 'Errore nel generare il QR';
+      }
+    }
+
+    document.getElementById('qrCloseBtn').addEventListener('click', function(){
+      document.getElementById('qrModalBackdrop').classList.remove('open');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bancone — Caffè del Teatro</title>
+<style>
+  :root{
+    --cream: #faf8f4;
+    --gold: #a9822f;
+    --gold-deep: #8a6a22;
+    --ink: #1c1a17;
+    --line: #e4ddcc;
+    --red: #b23a3a;
+    --green: #3a7d44;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    padding: 16px;
+  }
+  h1{
+    font-size: 20px;
+    margin: 0 0 4px;
+  }
+  .sub{
+    font-size: 13px;
+    opacity: 0.6;
+    margin-bottom: 20px;
+  }
+  .toolbar{
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  button{
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .btn-gold{ background: var(--gold); color: white; }
+  .btn-gold:hover{ background: var(--gold-deep); }
+  .btn-outline{ background: white; color: var(--ink); border: 1px solid var(--line); }
+  .btn-red{ background: var(--red); color: white; }
+  .btn-green{ background: var(--green); color: white; }
+  .btn-small{ padding: 5px 10px; font-size: 12px; }
+
+  .grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+  .card{
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .card.has-call{ border-color: var(--red); box-shadow: 0 0 0 2px rgba(178,58,58,0.15); }
+  .tables{
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+  .tables .tag{
+    display: inline-block;
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-right: 4px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .empty-tables{ font-size: 12px; opacity: 0.5; font-style: italic; }
+
+  .section-label{
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.5;
+    margin: 10px 0 4px;
+  }
+  .call-row, .order-row{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--cream);
+    border-radius: 6px;
+    padding: 6px 8px;
+    margin-bottom: 6px;
+    font-size: 13px;
+  }
+  .order-items{ font-size: 12px; opacity: 0.75; }
+
+  .card-actions{
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .empty-state{
+    opacity: 0.5;
+    font-style: italic;
+    padding: 40px 0;
+    text-align: center;
+  }
+
+  /* merge modal */
+  .modal-backdrop{
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  .modal-backdrop.open{ display: flex; }
+  .modal{
+    background: white;
+    border-radius: 10px;
+    padding: 18px;
+    width: min(90vw, 360px);
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal h3{ margin-top: 0; font-size: 16px; }
+  .token-option{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .modal-actions{
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 14px;
+  }
+</style>
+</head>
+<body>
+
+  <h1>Bancone</h1>
+  <div class="sub" id="connStatus">Connessione in corso…</div>
+
+  <div class="toolbar">
+    <button class="btn-gold" id="openMerge">Unisci tavoli</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div class="empty-state" id="emptyState" style="display:none;">Nessun tavolo attivo al momento.</div>
+
+  <div class="modal-backdrop" id="mergeBackdrop">
+    <div class="modal">
+      <h3>Unisci tavoli</h3>
+      <div id="tokenList"></div>
+      <div class="modal-actions">
+        <button class="btn-outline" id="cancelMerge">Annulla</button>
+        <button class="btn-gold" id="confirmMerge">Unisci selezionati</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const grid = document.getElementById('grid');
+    const emptyState = document.getElementById('emptyState');
+    const connStatus = document.getElementById('connStatus');
+
+    socket.on('connect', () => { connStatus.textContent = 'Connesso — aggiornamento in tempo reale'; });
+    socket.on('disconnect', () => { connStatus.textContent = 'Connessione persa, riconnessione…'; });
+
+    socket.on('state', (sessions) => {
+      renderGrid(sessions);
+    });
+
+    function timeAgo(ts){
+      const s = Math.floor((Date.now() - ts) / 1000);
+      if (s < 60) return s + 's fa';
+      const m = Math.floor(s / 60);
+      return m + ' min fa';
+    }
+
+    function renderGrid(sessions){
+      grid.innerHTML = '';
+      emptyState.style.display = sessions.length === 0 ? 'block' : 'none';
+
+      sessions.forEach((s) => {
+        const card = document.createElement('div');
+        card.className = 'card' + (s.pendingCalls.length ? ' has-call' : '');
+
+        const tablesHtml = s.tables.length
+          ? s.tables.map(t => `<span class="tag">${t.table}</span>`).join('')
+          : '<span class="empty-tables">nessun tavolo agganciato</span>';
+
+        let callsHtml = '';
+        if (s.pendingCalls.length){
+          callsHtml = '<div class="section-label">Chiamate cameriere</div>' +
+            s.pendingCalls.map(c => `
+              <div class="call-row">
+                <span>${c.table} — ${timeAgo(c.createdAt)}</span>
+                <button class="btn-green btn-small" onclick="resolveCall(${c.id})">Fatto</button>
+              </div>
+            `).join('');
+        }
+
+        let ordersHtml = '';
+        if (s.pendingOrders.length){
+          ordersHtml = '<div class="section-label">Ordini</div>' +
+            s.pendingOrders.map(o => `
+              <div class="order-row">
+                <span>
+                  ${o.table} — ${timeAgo(o.createdAt)}<br>
+                  <span class="order-items">${(o.items||[]).map(i => `${i.qty||1}× ${i.name}`).join(', ') || '—'}</span>
+                </span>
+                <button class="btn-green btn-small" onclick="resolveOrder(${o.id})">Pronto</button>
+              </div>
+            `).join('');
+        }
+
+        card.innerHTML = `
+          <div class="tables">${tablesHtml}</div>
+          ${callsHtml}
+          ${ordersHtml}
+          <div class="card-actions">
+            ${s.tables.length === 1 ? `<button class="btn-outline btn-small" onclick="splitTable('${s.tables[0].token}')">Separa</button>` : ''}
+            <button class="btn-red btn-small" onclick="closeTable(${s.sessionId})">Chiudi conto</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    async function resolveCall(id){
+      await fetch(`/api/staff/call/${id}/done`, { method: 'POST' });
+    }
+    async function resolveOrder(id){
+      await fetch(`/api/staff/order/${id}/status`, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ status: 'done' })
+      });
+    }
+    async function closeTable(sessionId){
+      if (!confirm('Chiudere questo conto? I tavoli torneranno disponibili per nuovi clienti.')) return;
+      await fetch('/api/staff/close', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ sessionId })
+      });
+    }
+    async function splitTable(token){
+      await fetch('/api/staff/split', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ token })
+      });
+    }
+
+    /* ---- merge modal ---- */
+    const mergeBackdrop = document.getElementById('mergeBackdrop');
+    const tokenList = document.getElementById('tokenList');
+
+    document.getElementById('openMerge').addEventListener('click', async () => {
+      const res = await fetch('/api/staff/tokens');
+      const tokens = await res.json();
+      tokenList.innerHTML = Object.entries(tokens).map(([token, info]) => `
+        <label class="token-option">
+          <input type="checkbox" value="${token}">
+          ${info.table}
+        </label>
+      `).join('');
+      mergeBackdrop.classList.add('open');
+    });
+
+    document.getElementById('cancelMerge').addEventListener('click', () => {
+      mergeBackdrop.classList.remove('open');
+    });
+
+    document.getElementById('confirmMerge').addEventListener('click', async () => {
+      const selected = Array.from(tokenList.querySelectorAll('input:checked')).map(i => i.value);
+      if (selected.length < 2){
+        alert('Seleziona almeno due tavoli da unire.');
+        return;
+      }
+      await fetch('/api/staff/merge', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ tokens: selected })
+      });
+      mergeBackdrop.classList.remove('open');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "caffe-del-teatro-backend",
+  "version": "1.0.0",
+  "description": "Backend per chiamata cameriere e ordini al tavolo, con gestione sessioni (unione/separazione tavoli)",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "import-tokens": "node lib/importTokens.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.7.5"
+  }
+}
