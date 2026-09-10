@@ -18,7 +18,6 @@ const io = new Server(server, { cors: { origin: "*" } });
 // Password del pannello gestore. Cambiala impostando la variabile d'ambiente
 // ADMIN_PASSWORD sul servizio di hosting (Railway/Render) prima di andare live.
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "cambiami123";
-console.log("ADMIN_PASSWORD ricevuta dall'ambiente:", process.env.ADMIN_PASSWORD ? ("SÌ, " + process.env.ADMIN_PASSWORD.length + " caratteri") : "NO, sto usando il valore di default");
 
 function requireAdmin(req, res, next) {
   if (req.headers["x-admin-password"] !== ADMIN_PASSWORD) {
